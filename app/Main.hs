@@ -1,7 +1,7 @@
+{-# LANGUAGE OverloadedStrings #-}
 module Main where
 
-import Email
-
 main :: IO ()
-main = run
+main = return ()
+
 

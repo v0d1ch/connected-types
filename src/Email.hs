@@ -17,46 +17,8 @@
 
 module Email where
 
-import Control.Monad.IO.Class
-import Control.Exception.Safe
-import Control.Monad.Except
 import Data.Aeson
 import GHC.Generics
-import Network.Wai.Handler.Warp as Warp
-import Servant
-
-type Req  = ReqBody '[JSON] Value
-type Resp = Post    '[JSON] Email
-
-type EmailAPI =
-  "api" :> "email" :>
-    ("work" :> Req :> Resp :<|>
-     "pleasure" :> Req :> Resp)
-
-api :: Proxy EmailAPI
-api = Proxy
-
-server :: Server EmailAPI
-server = undefined
-  -- work :<|> pleasure
-  -- where
-  --   work     = importEmail @'Work
-  --   pleasure = importEmail @'Pleasure
-
-importEmail
-  :: forall (et :: EmailType) . (FromJSON (ReduceE et))
-  => Value
-  -> ExceptT ServantErr IO Email
-importEmail blob =
-  case fromJSON blob of
-    Error err -> throwString err
-    Success (e :: ReduceE et) -> return $ (MkEmail e)
-
-app :: IO Application
-app = return (serve api $ server)
-
-run :: IO ()
-run = Warp.run 4000 =<< app
 
 data WorkVal = WorkVal
   { workEmail :: String
@@ -92,4 +54,12 @@ data Response = Response Email
 data Email where
   MkEmail :: ReduceE (et :: EmailType) -> Email
 
+importEmail
+  :: forall (et :: EmailType) . (FromJSON (ReduceE et))
+  => Value
+  -> Either String Email
+importEmail blob =
+  case fromJSON blob of
+    Error err -> Left err
+    Success (e :: ReduceE et) -> Right $ (MkEmail e)
 
